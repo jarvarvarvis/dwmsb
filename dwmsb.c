@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <stdbool.h>
 #include <sys/time.h>
 
 #ifndef NO_X
@@ -31,6 +32,7 @@ static void (*writestatus)(char *text) = pstdout;
 
 #include "config.h"
 
+static bool shouldExit = false;
 
 #ifndef NO_X
 void setroot(char *text)
@@ -102,6 +104,17 @@ char *readblocks()
 	return buf;
 }
 
+void termsighandler()
+{
+	shouldExit = true;
+}
+
+void usr1sighandler()
+{
+	char *text = readblocks();
+	writestatus(text);
+	free(text);
+}
 
 int main(void)
 {
@@ -110,11 +123,20 @@ int main(void)
 		return 1;
 #endif
 
+	signal(SIGINT,  termsighandler); // The process is interrupted
+	signal(SIGTERM, termsighandler); // The process is terminated
+	signal(SIGUSR1, usr1sighandler); // A USR1 signal was received -> force updating
+
 	while (1)
 	{
 		char *text = readblocks();
 		writestatus(text);
 		free(text);
+
+		if (shouldExit)
+		{
+			break;
+		}
 
 	        /* To provide updates on every full second (as good as possible)
 	         * we don’t use sleep(interval) but we sleep until the next
