@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
+#include <signal.h>
 #include <sys/time.h>
 
 #ifndef NO_X
